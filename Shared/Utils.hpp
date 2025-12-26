@@ -26,4 +26,10 @@ namespace Utils
     {
         UKismetSystemLibrary::ExecuteConsoleCommand(UWorld::GetWorld(), Cmd, nullptr);
     }
+
+    void MarkArrayDirty(void* Arr)
+    {
+        static void (*NativeFunc)(void*) = decltype(NativeFunc)(InSDKUtils::GetImageBase() + 0x168F3EC);
+        NativeFunc(Arr);
+    }
 }

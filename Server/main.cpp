@@ -70,6 +70,14 @@ bool ReadyToStartMatchHook(AFortGameModeBR* GameMode)
 APawn* SpawnDefaultPawnForHook(AFortGameModeBR* GameMode, AFortPlayerController* PlayerController, AActor* StartSpot)
 {
     PlayerController->WorldInventory = Utils::SpawnActor<AFortInventory>({}, PlayerController);
+
+    auto PlayerState = (AFortPlayerStateAthena*)PlayerController->PlayerState;
+    auto AbilitySet = UObject::FindObject<UFortAbilitySet>("FortAbilitySet GAS_AthenaPlayer.GAS_AthenaPlayer");
+    for (int i = 0; i < AbilitySet->GameplayAbilities.Num(); i++)
+    {
+        PlayerState->AbilitySystemComponent->K2_GiveAbility(AbilitySet->GameplayAbilities[i], 1, 1);
+    }
+
     auto translivesmatter = StartSpot->GetTransform();
     translivesmatter.Translation = { 0, 0, 10000 };
     auto ret = GameMode->SpawnDefaultPawnAtTransform(PlayerController, translivesmatter);
@@ -149,6 +157,52 @@ bool KickPlayerHook(int64 a1, int64 a2, int64 a3)
     return false;
 }
 
+void InternalServerTryActivateAbilityHook(UAbilitySystemComponent* Component, FGameplayAbilitySpecHandle Handle, 
+        bool InputPressed, const FPredictionKey& PredictionKey, const FGameplayEventData* TriggerEventData)
+{
+    static FGameplayAbilitySpec* (*FindAbilitySpecFromHandle)(UAbilitySystemComponent*, FGameplayAbilitySpecHandle)
+        = decltype(FindAbilitySpecFromHandle)(InSDKUtils::GetImageBase() + 0x1EA3DB8);
+
+    FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(Component, Handle);
+    if (!Spec)
+    {
+        Component->ClientActivateAbilityFailed(Handle, PredictionKey.Current);
+        return;
+    }
+
+    const UGameplayAbility* AbilityToActivate = Spec->Ability;
+
+    if (!AbilityToActivate)
+    {
+        Component->ClientActivateAbilityFailed(Handle, PredictionKey.Current);
+        return;
+    }
+
+    if (AbilityToActivate->NetSecurityPolicy == EGameplayAbilityNetSecurityPolicy::ServerOnlyExecution ||
+        AbilityToActivate->NetSecurityPolicy == EGameplayAbilityNetSecurityPolicy::ServerOnly)
+    {
+        Component->ClientActivateAbilityFailed(Handle, PredictionKey.Current);
+        return;
+    }
+
+    UGameplayAbility* InstancedAbility = nullptr;
+    Spec->InputPressed = true;
+
+    static bool (*InternalTryActivateAbility)(UAbilitySystemComponent*, FGameplayAbilitySpecHandle Handle, FPredictionKey InPredictionKey, 
+        UGameplayAbility** OutInstancedAbility, void* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
+        = decltype(InternalTryActivateAbility)(InSDKUtils::GetImageBase() + 0x724A168);
+
+    if (InternalTryActivateAbility(Component, Handle, PredictionKey, &InstancedAbility, nullptr, TriggerEventData))
+    {
+    }
+    else
+    {
+        Component->ClientActivateAbilityFailed(Handle, PredictionKey.Current);
+        Spec->InputPressed = false;
+        Utils::MarkArrayDirty(&Component->ActivatableAbilities);
+    }
+}
+
 DWORD MainThread(HMODULE Module)
 {
     AllocConsole();
@@ -169,6 +223,7 @@ DWORD MainThread(HMODULE Module)
     Hook::VTable<AFortGameModeBR>(2328 / 8, ReadyToStartMatchHook, &ReadyToStartMatchOriginal);
     Hook::VTable<AFortGameModeBR>(1832 / 8, SpawnDefaultPawnForHook);
     Hook::VTable<AFortPlayerControllerAthena>(2416 / 8, ServerAcknowledgePossessionHook);
+    Hook::VTable<UFortAbilitySystemComponentAthena>(2240 / 8, InternalServerTryActivateAbilityHook);
 
     *(bool*)(InSDKUtils::GetImageBase() + 0x1164007B) = false; // GIsClient
     *(bool*)(InSDKUtils::GetImageBase() + 0x1164000D) = true; // GIsServer
