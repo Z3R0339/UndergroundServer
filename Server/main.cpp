@@ -119,6 +119,13 @@ void ServerAcknowledgePossessionHook(AFortPlayerControllerAthena* PlayerControll
             EventController->CentralPicnic_Layer_Pre();
         }
         EventControllers.Free();
+
+        // auto Manager = UWorldPartitionBlueprintLibrary::GetDataLayerManager(UWorld::GetWorld());
+        // auto Instances = Manager->GetDataLayerInstances();
+        // for (auto Instance : Instances)
+        // {
+        //     Manager->SetDataLayerInstanceRuntimeState(Instance, EDataLayerRuntimeState::Activated, false);
+        // }
     }
 }
 
