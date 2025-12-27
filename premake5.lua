@@ -41,6 +41,8 @@ project "UndergroundServer"
         "Shared/SDK/Engine_functions.cpp",
         "Shared/SDK/FortniteGame_functions.cpp",
         "Shared/SDK/GameplayAbilities_functions.cpp",
+        "Shared/SDK/Event_CentralPicnic_Thumper_functions.cpp",
+        "Shared/SDK/CentralPicnic_MasterEventController_functions.cpp",
 
         "minhook/src/**.c",
     }

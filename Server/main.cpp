@@ -7,6 +7,9 @@
 
 #include "Inventory.hpp"
 
+#include <SDK/Event_CentralPicnic_Thumper_classes.hpp>
+#include <SDK/CentralPicnic_MasterEventController_classes.hpp>
+
 void ReturnHook()
 {
     return;
@@ -68,6 +71,8 @@ bool ReadyToStartMatchHook(AFortGameModeBR* GameMode)
         World->LevelCollections[1].NetDriver = NetDriver;
 
         GameMode->bWorldIsReady = true;
+
+        World->ServerStreamingLevelsVisibility = Utils::SpawnActor<AServerStreamingLevelsVisibility>();
     }
 
     return ReadyToStartMatchOriginal(GameMode);
@@ -101,6 +106,20 @@ APawn* SpawnDefaultPawnForHook(AFortGameModeBR* GameMode, AFortPlayerControllerA
 void ServerAcknowledgePossessionHook(AFortPlayerControllerAthena* PlayerController, APawn* P)
 {
     PlayerController->AcknowledgedPawn = P;
+
+    static bool InitedStuff = false;
+    if (!InitedStuff)
+    {
+        InitedStuff = true;
+
+        auto EventControllers = Utils::GetAllActorsOfClass<ACentralPicnic_MasterEventController_C>();
+        if (EventControllers.Num() > 0)
+        {
+            auto EventController = EventControllers[0];
+            EventController->CentralPicnic_Layer_Pre();
+        }
+        EventControllers.Free();
+    }
 }
 
 void SendClientMoveAdjustments(UNetDriver* NetDriver)
@@ -240,6 +259,35 @@ void ServerCheatHook(AFortPlayerControllerAthena* PlayerController, const FStrin
         auto ItemDef = UObject::FindObject<UFortWorldItemDefinition>(CmdA.substr(9));
         Inventory::GiveItem(PlayerController, ItemDef);
         Inventory::Update(PlayerController);
+    }
+    else if (Cmd == L"event")
+    {
+        static int EventState = 0;
+        if (EventState == 0)
+        {
+            auto Thumpers = Utils::GetAllActorsOfClass<AEvent_CentralPicnic_Thumper_C>();
+            if (Thumpers.Num() > 0)
+            {
+                auto Thumper = Thumpers[0];
+                Thumper->MulticastFistpump();
+            }
+            Thumpers.Free();
+        }
+        else if (EventState == 1)
+        {
+            auto ChainClass = UObject::FindClass("BlueprintGeneratedClass B_CentralPicnic_Chains.B_CentralPicnic_Chains_C");
+            TArray<AActor*> Chains;
+            UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), ChainClass, &Chains);
+            if (Chains.Num() > 0)
+            {
+                auto Chain = Chains[0];
+                auto DropBoxFunc = ChainClass->GetFunction("B_CentralPicnic_Chains_C", "DropTheBox");
+                Chain->ProcessEvent(DropBoxFunc, nullptr);
+            }
+            Chains.Free();
+        }
+
+        EventState++;
     }
 }
 

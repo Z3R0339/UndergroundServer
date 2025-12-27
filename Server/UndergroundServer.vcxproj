@@ -50,8 +50,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Shared\SDK\Basic.cpp" />
+    <ClCompile Include="..\Shared\SDK\CentralPicnic_MasterEventController_functions.cpp" />
     <ClCompile Include="..\Shared\SDK\CoreUObject_functions.cpp" />
     <ClCompile Include="..\Shared\SDK\Engine_functions.cpp" />
+    <ClCompile Include="..\Shared\SDK\Event_CentralPicnic_Thumper_functions.cpp" />
     <ClCompile Include="..\Shared\SDK\FortniteGame_functions.cpp" />
     <ClCompile Include="..\Shared\SDK\GameplayAbilities_functions.cpp" />
     <ClCompile Include="..\minhook\src\buffer.c" />

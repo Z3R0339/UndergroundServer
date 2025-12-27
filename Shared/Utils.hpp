@@ -37,4 +37,12 @@ namespace Utils
     {
         return (UFortAssetManager*)UEngine::GetEngine()->AssetManager;
     }
+
+    template <typename T>
+    TArray<T*> GetAllActorsOfClass()
+    {
+        TArray<AActor*> ret;
+        UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), T::StaticClass(), &ret);
+        return *(TArray<T*>*)(&ret);
+    }
 }

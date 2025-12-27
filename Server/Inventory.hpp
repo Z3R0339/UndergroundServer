@@ -22,7 +22,12 @@ namespace Inventory
             auto Entry = PlayerController->WorldInventory->Inventory.ReplicatedEntries[i];
             if (UKismetGuidLibrary::EqualEqual_GuidGuid(Entry.ItemGuid, ItemGuid))
             {
-                Pawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Entry.ItemDefinition, ItemGuid, {}, false);
+                auto Weapon = Pawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Entry.ItemDefinition, ItemGuid, {}, false);
+                if (Entry.ItemDefinition->IsA(UFortWeaponItemDefinition::StaticClass()))
+                {
+                    auto WeaponDef = (UFortWeaponItemDefinition*)Entry.ItemDefinition;
+                    Weapon->WeaponModSlots = WeaponDef->WeaponModSlots;
+                }
             }
         }
     }

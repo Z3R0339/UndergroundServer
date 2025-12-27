@@ -24,10 +24,16 @@
     <ClCompile Include="..\Shared\SDK\Basic.cpp">
       <Filter>..\Shared\SDK</Filter>
     </ClCompile>
+    <ClCompile Include="..\Shared\SDK\CentralPicnic_MasterEventController_functions.cpp">
+      <Filter>..\Shared\SDK</Filter>
+    </ClCompile>
     <ClCompile Include="..\Shared\SDK\CoreUObject_functions.cpp">
       <Filter>..\Shared\SDK</Filter>
     </ClCompile>
     <ClCompile Include="..\Shared\SDK\Engine_functions.cpp">
+      <Filter>..\Shared\SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\SDK\Event_CentralPicnic_Thumper_functions.cpp">
       <Filter>..\Shared\SDK</Filter>
     </ClCompile>
     <ClCompile Include="..\Shared\SDK\FortniteGame_functions.cpp">
