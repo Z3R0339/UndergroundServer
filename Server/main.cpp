@@ -4,6 +4,8 @@
 #include <Utils.hpp>
 #include <Hook.hpp>
 
+#include "Inventory.hpp"
+
 void ReturnHook()
 {
     return;
@@ -67,7 +69,7 @@ bool ReadyToStartMatchHook(AFortGameModeBR* GameMode)
     return ReadyToStartMatchOriginal(GameMode);
 }
 
-APawn* SpawnDefaultPawnForHook(AFortGameModeBR* GameMode, AFortPlayerController* PlayerController, AActor* StartSpot)
+APawn* SpawnDefaultPawnForHook(AFortGameModeBR* GameMode, AFortPlayerControllerAthena* PlayerController, AActor* StartSpot)
 {
     PlayerController->WorldInventory = Utils::SpawnActor<AFortInventory>({}, PlayerController);
 
@@ -77,6 +79,13 @@ APawn* SpawnDefaultPawnForHook(AFortGameModeBR* GameMode, AFortPlayerController*
     {
         PlayerState->AbilitySystemComponent->K2_GiveAbility(AbilitySet->GameplayAbilities[i], 1, 1);
     }
+
+    auto AssetManager = Utils::GetAssetManager();
+    Inventory::GiveItem(PlayerController, AssetManager->GameDataCosmetics->FallbackPickaxe->WeaponDefinition);
+    Inventory::GiveItem(PlayerController, UFortKismetLibrary::K2_GetResourceItemDefinition(EFortResourceType::Wood), 500);
+    Inventory::GiveItem(PlayerController, UFortKismetLibrary::K2_GetResourceItemDefinition(EFortResourceType::Stone), 500);
+    Inventory::GiveItem(PlayerController, UFortKismetLibrary::K2_GetResourceItemDefinition(EFortResourceType::Metal), 500);
+    Inventory::Update(PlayerController);
 
     auto translivesmatter = StartSpot->GetTransform();
     translivesmatter.Translation = { 0, 0, 10000 };
@@ -210,6 +219,8 @@ DWORD MainThread(HMODULE Module)
     freopen_s(&Dummy, "CONOUT$", "w", stdout);
     freopen_s(&Dummy, "CONIN$", "r", stdin);
 
+    FMemory::Init((void*)(InSDKUtils::GetImageBase() + 0x43DC21C));
+
     MH_Initialize();
 
     Utils::ExecuteConsoleCommand(L"log LogFortUIDirector None");
@@ -223,6 +234,7 @@ DWORD MainThread(HMODULE Module)
     Hook::VTable<AFortGameModeBR>(2328 / 8, ReadyToStartMatchHook, &ReadyToStartMatchOriginal);
     Hook::VTable<AFortGameModeBR>(1832 / 8, SpawnDefaultPawnForHook);
     Hook::VTable<AFortPlayerControllerAthena>(2416 / 8, ServerAcknowledgePossessionHook);
+    Hook::VTable<AFortPlayerControllerAthena>(4432 / 8, Inventory::ServerExecuteInventoryItemHook);
     Hook::VTable<UFortAbilitySystemComponentAthena>(2240 / 8, InternalServerTryActivateAbilityHook);
 
     *(bool*)(InSDKUtils::GetImageBase() + 0x1164007B) = false; // GIsClient

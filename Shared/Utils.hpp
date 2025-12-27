@@ -32,4 +32,9 @@ namespace Utils
         static void (*NativeFunc)(void*) = decltype(NativeFunc)(InSDKUtils::GetImageBase() + 0x168F3EC);
         NativeFunc(Arr);
     }
+
+    UFortAssetManager* GetAssetManager()
+    {
+        return (UFortAssetManager*)UEngine::GetEngine()->AssetManager;
+    }
 }
