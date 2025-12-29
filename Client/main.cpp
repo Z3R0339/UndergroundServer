@@ -1,5 +1,6 @@
 #include <Windows.h>
 #include <iostream>
+#include <print>
 
 #include <Utils.hpp>
 #include <Hook.hpp>
@@ -22,6 +23,13 @@ bool UWorldExecHook(UWorld* World, int64 a2, const wchar_t* Cmd, int64 a4)
     return UWorldExecOriginal(World, a2, Cmd, a4);
 }
 
+void (*CallServerMoveOriginal)(AFortPhysicsPawn* Pawn, FReplicatedPhysicsPawnState& InState);
+void CallServerMoveHook(AFortPhysicsPawn* Pawn, FReplicatedPhysicsPawnState& InState)
+{
+    InState.Rotation = UKismetMathLibrary::Conv_RotatorToQuaternion(Pawn->K2_GetActorRotation());
+    CallServerMoveOriginal(Pawn, InState);
+}
+
 DWORD MainThread(HMODULE Module)
 {
     AllocConsole();
@@ -39,6 +47,8 @@ DWORD MainThread(HMODULE Module)
 
     Utils::ExecuteConsoleCommand(L"net.AllowEncryption 0");
     *(bool*)(InSDKUtils::GetImageBase() + 0x117E1128) = true;
+
+    Hook::Function(InSDKUtils::GetImageBase() + 0x95B2BBC, CallServerMoveHook, &CallServerMoveOriginal);
 
     Utils::ExecuteConsoleCommand(L"open 127.0.0.1");
     return 0;

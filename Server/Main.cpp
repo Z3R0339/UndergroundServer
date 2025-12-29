@@ -241,9 +241,10 @@ void ServerCheatHook(AFortPlayerControllerAthena* PlayerController, const FStrin
 
 void ServerMoveHook(AFortPhysicsPawn* Pawn, const FReplicatedPhysicsPawnState& InState)
 {
-    auto Rotator = UKismetMathLibrary::Quat_Rotator(InState.Rotation);
-    auto Rotator2 = Pawn->K2_GetActorRotation();
-    std::println("{}, {}, {}", UKismetMathLibrary::abs(Rotator.Pitch - Rotator2.Pitch), UKismetMathLibrary::abs(Rotator.Yaw - Rotator2.Yaw), UKismetMathLibrary::abs(Rotator.Roll - Rotator2.Roll));
+    auto Component = (UPrimitiveComponent*)Pawn->GetComponentByClass(UPrimitiveComponent::StaticClass());
+    Component->K2_SetWorldLocationAndRotation((FVector)InState.Translation, UKismetMathLibrary::Quat_Rotator(InState.Rotation), false, nullptr, true);
+    Component->SetAllPhysicsLinearVelocity(InState.LinearVelocity, false);
+    Component->SetAllPhysicsAngularVelocityInDegrees(InState.AngularVelocity, false);
 }
 
 void ServerPurchaseWeaponModForWeaponHook(UFortWeaponModStationComponent* Component, UFortWeaponModItemDefinition* WeaponMod, AFortWeapon* Weapon)
