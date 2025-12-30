@@ -23,6 +23,7 @@
 #include "Net.hpp"
 #include "Vehicles.hpp"
 #include "ModStation.hpp"
+#include "Building.hpp"
 #include "Commands.hpp"
 
 void ReturnHook()
@@ -109,6 +110,11 @@ APawn* SpawnDefaultPawnForHook(AFortGameModeBR* GameMode, AFortPlayerControllerA
     Inventory::GiveItem(PlayerController, UFortKismetLibrary::K2_GetResourceItemDefinition(EFortResourceType::Metal));
     Inventory::GiveItem(PlayerController, UObject::FindObject<UFortResourceItemDefinition>("FortResourceItemDefinition Athena_WadsItemData.Athena_WadsItemData"));
     Inventory::GiveItem(PlayerController, UObject::FindObject<UFortAmmoItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataBulletsHeavy.AthenaAmmoDataBulletsHeavy"));
+    for (int i = 0; i < 4; i++)
+    {
+        auto thing = GameMode->StartingItems[i];
+        Inventory::GiveItem(PlayerController, (UFortWorldItemDefinition*)thing.Item, thing.Count);
+    }
 
     static auto ShockGrenade = UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition Athena_ShockGrenade.Athena_ShockGrenade");
     Inventory::GiveItem(PlayerController, ShockGrenade);
@@ -145,8 +151,6 @@ void ServerAcknowledgePossessionHook(AFortPlayerControllerAthena* PlayerControll
     }
 }
 
-
-
 DWORD MainThread(HMODULE Module)
 {
     AllocConsole();
@@ -173,6 +177,7 @@ DWORD MainThread(HMODULE Module)
     Hook::VTable<AFortPlayerControllerAthena>(4000 / 8, Commands::ServerCheatHook);
     Hook::VTable<AFortPlayerControllerAthena>(4432 / 8, Inventory::ServerExecuteInventoryItemHook);
     Hook::VTable<AFortPlayerControllerAthena>(4520 / 8, Inventory::ServerAttemptInventoryDrop);
+    Hook::VTable<AFortPlayerControllerAthena>(4688 / 8, Building::ServerCreateBuildingActorHook);
     Hook::VTable<AFortPlayerPawnAthena>(4616 / 8, Inventory::ServerHandlePickup);
     Hook::VTable<UFortWeaponModStationComponent>(1304 / 8, ModStation::ServerPurchaseWeaponModForWeaponHook);
     Hook::VTable<UFortWeaponModStationComponent>(1320 / 8, ModStation::ServerStopInteractWithWorkbenchActorHook, &ModStation::ServerStopInteractWithWorkbenchActorOriginal);
