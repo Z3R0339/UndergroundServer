@@ -6,10 +6,6 @@
 #include <Utils.hpp>
 #include <Hook.hpp>
 
-#include "Inventory.hpp"
-#include "Abilities.hpp"
-#include "Net.hpp"
-
 #include <SDK/Event_CentralPicnic_Thumper_classes.hpp>
 #include <SDK/CentralPicnic_MasterEventController_classes.hpp>
 #include <SDK/B_MMObj_RiftPoiGameStateComponent_classes.hpp>
@@ -17,6 +13,15 @@
 #include <SDK/AscenderCodeRuntime_classes.hpp>
 #include <SDK/WeaponModsCodeRuntime_classes.hpp>
 #include <SDK/GameplayTags_classes.hpp>
+
+#define MessageBox(...) MessageBoxA(NULL, std::format(__VA_ARGS__).c_str(), "UndergroundServer", MB_OK)
+
+#include "Inventory.hpp"
+#include "Abilities.hpp"
+#include "Net.hpp"
+#include "Vehicles.hpp"
+#include "ModStation.hpp"
+#include "Commands.hpp"
 
 void ReturnHook()
 {
@@ -128,202 +133,12 @@ void ServerAcknowledgePossessionHook(AFortPlayerControllerAthena* PlayerControll
         }
         EventControllers.Free();
 
-        TSoftClassPtr<class UClass> SoftPtr;
-        SoftPtr.ObjectID.AssetPath.PackageName = UKismetStringLibrary::Conv_StringToName(L"/WeaponModStation/Gameplay/Actors/BP_WeaponModStation_v2");
-        SoftPtr.ObjectID.AssetPath.AssetName = UKismetStringLibrary::Conv_StringToName(L"BP_WeaponModStation_v2_C");
-        static auto Class = UKismetSystemLibrary::LoadClassAsset_Blocking(SoftPtr);
-
-        auto SportsCar = Utils::LoadClass(L"/Valet/SportsCar/Valet_SportsCar_Vehicle", L"Valet_SportsCar_Vehicle_C");
-        if (SportsCar)
-        {
-            auto SpawnerClass = UObject::FindClass("BlueprintGeneratedClass Valet_SportsCar_LWSpawner.Valet_SportsCar_LWSpawner_C");
-            auto Spawners = Utils::GetAllActorsOfClass(SpawnerClass);
-            for (auto Spawner : Spawners)
-            {
-                // TODO Random chance
-                Utils::SpawnActor(SportsCar, Spawner->K2_GetActorLocation());
-            }
-            Spawners.Free();
-
-            SpawnerClass = UObject::FindClass("BlueprintGeneratedClass Valet_SportsCar_AlwaysSpawn_LWSpawner.Valet_SportsCar_AlwaysSpawn_LWSpawner_C");
-            Spawners = Utils::GetAllActorsOfClass(SpawnerClass);
-            for (auto Spawner : Spawners)
-            {
-                Utils::SpawnActor(SportsCar, Spawner->K2_GetActorLocation());
-            }
-            Spawners.Free();
-        }
-
-        // auto Manager = UWorldPartitionBlueprintLibrary::GetDataLayerManager(UWorld::GetWorld());
-        // auto Instances = Manager->GetDataLayerInstances();
-        // for (auto Instance : Instances)
-        // {
-        //     Manager->SetDataLayerInstanceRuntimeState(Instance, EDataLayerRuntimeState::Activated, false);
-        // }
+        Utils::LoadClass(L"/WeaponModStation/Gameplay/Actors/BP_WeaponModStation_v2", L"BP_WeaponModStation_v2_C");
+        Vehicles::Spawn();
     }
 }
 
-void ServerCheatHook(AFortPlayerControllerAthena* PlayerController, const FString& FMsg)
-{
-    auto Cmd = FMsg.ToWString();
-    auto CmdA = FMsg.ToString();
-    if (Cmd.starts_with(L"server "))
-    {
-        Utils::ExecuteConsoleCommand(Cmd.substr(7).c_str());
-    }
-    else if (Cmd == L"dumpobjects")
-    {
-        std::ofstream outfile("objects.txt");
-        for (int i = 0; i < UObject::GObjects->Num(); i++)
-        {
-            auto Object = UObject::GObjects->GetByIndex(i);
-            if (!Object) continue;
-            outfile << Object->GetFullName() << '\n';
-        }
-        outfile.close();
-    }
-    else if (Cmd.starts_with(L"giveitem "))
-    {
-        auto ItemDef = UObject::FindObject<UFortWorldItemDefinition>(CmdA.substr(9));
-        Inventory::GiveItem(PlayerController, ItemDef);
-        Inventory::Update(PlayerController);
-    }
-    else if (Cmd == L"event")
-    {
-        static int EventState = 0;
-        if (EventState == 0)
-        {
-            auto Thumpers = Utils::GetAllActorsOfClass<AEvent_CentralPicnic_Thumper_C>();
-            if (Thumpers.Num() > 0)
-            {
-                auto Thumper = Thumpers[0];
-                Thumper->MulticastFistpump();
-            }
-            Thumpers.Free();
-        }
-        else if (EventState == 1)
-        {
-            auto ChainClass = UObject::FindClass("BlueprintGeneratedClass B_CentralPicnic_Chains.B_CentralPicnic_Chains_C");
-            TArray<AActor*> Chains;
-            UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), ChainClass, &Chains);
-            if (Chains.Num() > 0)
-            {
-                auto Chain = Chains[0];
-                auto DropBoxFunc = ChainClass->GetFunction("B_CentralPicnic_Chains_C", "DropTheBox");
-                Chain->ProcessEvent(DropBoxFunc, nullptr);
-            }
-            Chains.Free();
-        }
 
-        EventState++;
-    }
-    else if (Cmd == L"snipermod")
-    {
-        static UFortWorldItemDefinition* Snipers[] = {
-            UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_UC.WID_Sniper_Paprika_Athena_UC"),
-            UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_R.WID_Sniper_Paprika_Athena_R"),
-            UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_VR.WID_Sniper_Paprika_Athena_VR"),
-            UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_SR.WID_Sniper_Paprika_Athena_SR")
-        };
-        static auto ModSetData = UObject::FindObject<UFortWeaponModSetData>("FortWeaponModSetData WMSet_CovertOps.WMSet_CovertOps");
-
-        for (int i = 0; i < 4; i++)
-        {
-            Inventory::GiveItem(PlayerController, Snipers[i], 1, ModSetData);
-        }
-        Inventory::Update(PlayerController);
-    }
-    else if (Cmd == L"car")
-    {
-        auto Loc = PlayerController->Pawn->K2_GetActorLocation();
-        Loc.X += 5000;
-        Loc.Y += 5000;
-        Loc.Z += 5000;
-        auto Car = Utils::SpawnActor<AValet_BasicCar_Vehicle_C>(Loc);
-
-    }
-    else if (Cmd == L"modstation")
-    {
-        static TSoftClassPtr<class UClass> SoftPtr;
-        static bool uwu = true;
-        if (uwu)
-        {
-            uwu = false;
-
-            SoftPtr.ObjectID.AssetPath.PackageName = UKismetStringLibrary::Conv_StringToName(L"/WeaponModStation/Gameplay/Actors/BP_WeaponModStation_v2");
-            SoftPtr.ObjectID.AssetPath.AssetName = UKismetStringLibrary::Conv_StringToName(L"BP_WeaponModStation_v2_C");
-        }
-        static auto Class = UKismetSystemLibrary::LoadClassAsset_Blocking(SoftPtr);
-        Utils::SpawnActor(Class, PlayerController->Pawn->K2_GetActorLocation() + (PlayerController->Pawn->GetActorForwardVector() * 1000));
-    }
-    else if (Cmd == L"givesniper")
-    {
-        static auto ItemDef = UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_SR.WID_Sniper_Paprika_Athena_SR");
-        Inventory::GiveItem(PlayerController, ItemDef, 1);
-        Inventory::Update(PlayerController);
-    }
-    else if (Cmd == L"crash")
-    {
-        ((AFortPlayerControllerAthena*)UWorld::GetWorld())->WorldInventory->HandleInventoryLocalUpdate();
-    }
-}
-
-void ServerMoveHook(AFortPhysicsPawn* Pawn, const FReplicatedPhysicsPawnState& InState)
-{
-    auto Component = (UPrimitiveComponent*)Pawn->GetComponentByClass(UPrimitiveComponent::StaticClass());
-    Component->K2_SetWorldLocationAndRotation((FVector)InState.Translation, UKismetMathLibrary::Quat_Rotator(InState.Rotation), false, nullptr, true);
-    Component->SetAllPhysicsLinearVelocity(InState.LinearVelocity, false);
-    Component->SetAllPhysicsAngularVelocityInDegrees(InState.AngularVelocity, false);
-}
-
-void ServerPurchaseWeaponModForWeaponHook(UFortWeaponModStationComponent* Component, UFortWeaponModItemDefinition* WeaponMod, AFortWeapon* Weapon)
-{
-    auto PlayerController = (AFortPlayerControllerAthena*)Component->GetOwner();
-
-    if (!Component->CanPlayerAffordModForWeapon(WeaponMod, Weapon, PlayerController))
-        return;
-
-    bool added = false;
-    for (auto& Slot : Weapon->WeaponModSlots)
-    {
-        if (UBlueprintGameplayTagLibrary::EqualEqual_GameplayTag(WeaponMod->ModSlot, Slot.WeaponMod->ModSlot))
-        {
-            Slot.WeaponMod = WeaponMod;
-            added = true;
-        }
-    }
-
-    if (!added)
-    {
-        Weapon->WeaponModSlots.Add({ WeaponMod, true });
-    }
-
-    // TODO Add player name to weapon name
-
-    static auto GoldItemDef = UObject::FindObject<UFortResourceItemDefinition>("FortResourceItemDefinition Athena_WadsItemData.Athena_WadsItemData");
-
-    // TODO Get real mod cost
-    Inventory::RemoveItem(PlayerController, GoldItemDef, 75);
-}
-
-void (*ServerStopInteractWithWorkbenchActorOriginal)(UFortWeaponModStationComponent* Component, AFortWeaponModStationBase* NewInteractingWeaponModStation);
-void ServerStopInteractWithWorkbenchActorHook(UFortWeaponModStationComponent* Component, AFortWeaponModStationBase* NewInteractingWeaponModStation)
-{
-    auto PlayerController = (AFortPlayerControllerAthena*)Component->GetOwner();
-    auto PlayerState = (AFortPlayerStateAthena*)PlayerController->PlayerState;
-
-    for (auto Ability : PlayerState->AbilitySystemComponent->ActivatableAbilities.Items)
-    {
-        static UClass* AbilityClass = UObject::FindClass("BlueprintGeneratedClass GA_WeaponModStation_Camera_v2.GA_WeaponModStation_Camera_v2_C");
-        if (Ability.Ability->IsA(AbilityClass))
-        {
-            PlayerState->AbilitySystemComponent->ClearAbility(Ability.Handle);
-            break;
-        }
-    }
-
-    ServerStopInteractWithWorkbenchActorOriginal(Component, NewInteractingWeaponModStation);
-}
 
 DWORD MainThread(HMODULE Module)
 {
@@ -348,12 +163,12 @@ DWORD MainThread(HMODULE Module)
     Hook::VTable<AFortGameModeBR>(2328 / 8, ReadyToStartMatchHook, &ReadyToStartMatchOriginal);
     Hook::VTable<AFortGameModeBR>(1832 / 8, SpawnDefaultPawnForHook);
     Hook::VTable<AFortPlayerControllerAthena>(2416 / 8, ServerAcknowledgePossessionHook);
-    Hook::VTable<AFortPlayerControllerAthena>(4000 / 8, ServerCheatHook);
+    Hook::VTable<AFortPlayerControllerAthena>(4000 / 8, Commands::ServerCheatHook);
     Hook::VTable<AFortPlayerControllerAthena>(4432 / 8, Inventory::ServerExecuteInventoryItemHook);
     Hook::VTable<AFortPlayerControllerAthena>(4520 / 8, Inventory::ServerAttemptInventoryDrop);
     Hook::VTable<AFortPlayerPawnAthena>(4616 / 8, Inventory::ServerHandlePickup);
-    Hook::VTable<UFortWeaponModStationComponent>(1304 / 8, ServerPurchaseWeaponModForWeaponHook);
-    Hook::VTable<UFortWeaponModStationComponent>(1320 / 8, ServerStopInteractWithWorkbenchActorHook, &ServerStopInteractWithWorkbenchActorOriginal);
+    Hook::VTable<UFortWeaponModStationComponent>(1304 / 8, ModStation::ServerPurchaseWeaponModForWeaponHook);
+    Hook::VTable<UFortWeaponModStationComponent>(1320 / 8, ModStation::ServerStopInteractWithWorkbenchActorHook, &ModStation::ServerStopInteractWithWorkbenchActorOriginal);
 
     for (int i = 0; i < UObject::GObjects->Num(); i++)
     {
@@ -365,8 +180,9 @@ DWORD MainThread(HMODULE Module)
             Hook::VTable((void**)((UClass*)Object)->DefaultObject->VTable, 2240 / 8, Abilities::InternalServerTryActivateAbilityHook);
         }
     }
-    // Hook::VTable<UFortAbilitySystemComponentAthena>(2240 / 8, Abilities::InternalServerTryActivateAbilityHook);
-    Hook::VTable<AFortDagwoodVehicle>(2192 / 8, ServerMoveHook);
+
+    // TODO? Hook every possible AFortPhysicsPawn
+    Hook::VTable<AFortDagwoodVehicle>(2192 / 8, Vehicles::ServerMoveHook);
 
     *(bool*)(InSDKUtils::GetImageBase() + 0x1164007B) = false; // GIsClient
     *(bool*)(InSDKUtils::GetImageBase() + 0x1164000D) = true; // GIsServer
