@@ -74,6 +74,11 @@ namespace Inventory
             auto WeaponDef = (UFortWeaponItemDefinition*)ItemDef;
             for (auto Mod : WeaponDef->WeaponModSlots)
                 Item->ItemEntry.WeaponModSlots.Add({ Mod.WeaponMod, Mod.bIsDynamic });
+
+            if (auto Stats = Utils::FindDataTableRow<FFortBaseWeaponStats>(WeaponDef->WeaponStatHandle.DataTable, WeaponDef->WeaponStatHandle.RowName))
+            {
+                Item->ItemEntry.LoadedAmmo = Stats->ClipSize;
+            }
         }
 
         // if (ModSetData)

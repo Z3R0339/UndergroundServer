@@ -125,4 +125,21 @@ namespace Utils
 
         return nullptr;
     }
+
+    template <typename T>
+    T* FindDataTableRow(UDataTable* DataTable, FName Name)
+    {
+        if (!DataTable)
+            return nullptr;
+
+        for (auto thing : DataTable->RowMap)
+        {
+            if (thing.Key() == Name)
+            {
+                return (T*)thing.Value();
+            }
+        }
+
+        return nullptr;
+    }
 }
