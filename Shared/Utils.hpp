@@ -87,4 +87,42 @@ namespace Utils
         Softie.ObjectID.AssetPath.AssetName = UKismetStringLibrary::Conv_StringToName(AssetName);
         return UKismetSystemLibrary::LoadClassAsset_Blocking(Softie);
     }
+
+    template <typename T>
+    T* GetSoftPtr(TSoftObjectPtr<T> SoftPtr)
+    {
+        auto ret = SoftPtr.Get();
+
+        if (!ret)
+            ret = (T*)UKismetSystemLibrary::LoadAsset_Blocking((TSoftObjectPtr<UObject>)SoftPtr);
+
+        return (T*)ret;
+    }
+
+    UClass* GetSoftPtr(TSoftClassPtr<UClass>& SoftPtr)
+    {
+        auto ret = SoftPtr.Get();
+
+        if (!ret)
+            ret = UKismetSystemLibrary::LoadClassAsset_Blocking(SoftPtr);
+
+        return ret;
+    }
+
+    template <typename T = UObject>
+    T* FindObjectFast(const std::string& Name, EClassCastFlags RequiredType = EClassCastFlags::None, EClassCastFlags ExcludeType = EClassCastFlags::Package)
+    {
+        for (int i = 0; i < UObject::GObjects->Num(); ++i)
+        {
+            UObject* Object = UObject::GObjects->GetByIndex(i);
+        
+            if (!Object || Object->HasTypeFlag(ExcludeType))
+                continue;
+            
+            if (Object->HasTypeFlag(RequiredType) && Object->GetName() == Name)
+                return (T*)Object;
+        }
+
+        return nullptr;
+    }
 }

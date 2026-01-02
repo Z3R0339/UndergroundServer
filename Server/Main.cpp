@@ -19,6 +19,9 @@
 #define DisableMME
 // #define SkipAircraft
 
+// DataTable ModSetBucketsBaseTable.ModSetBucketsBaseTable
+// FortWeaponModSetRow
+
 #include "Inventory.hpp"
 #include "Abilities.hpp"
 #include "GameLogic.hpp"
@@ -110,12 +113,25 @@ APawn* SpawnDefaultPawnForHook(AFortGameModeBR* GameMode, AFortPlayerControllerA
     PlayerState->AbilitySystemComponent->K2_GiveAbility(HillScramble, 1, 1);
 
     auto AssetManager = Utils::GetAssetManager();
-    Inventory::GiveItem(PlayerController, AssetManager->GameDataCosmetics->FallbackPickaxe->WeaponDefinition);
+    Inventory::GiveItem(PlayerController, Utils::GetSoftPtr(AssetManager->GameDataCosmetics->FallbackPickaxe)->WeaponDefinition);
+    Inventory::GiveItem(PlayerController, Utils::GetSoftPtr(AssetManager->GameDataBR->DefaultGlobalCurrencyItemDefinition));
+
     Inventory::GiveItem(PlayerController, UFortKismetLibrary::K2_GetResourceItemDefinition(EFortResourceType::Wood));
     Inventory::GiveItem(PlayerController, UFortKismetLibrary::K2_GetResourceItemDefinition(EFortResourceType::Stone));
     Inventory::GiveItem(PlayerController, UFortKismetLibrary::K2_GetResourceItemDefinition(EFortResourceType::Metal));
-    Inventory::GiveItem(PlayerController, UObject::FindObject<UFortResourceItemDefinition>("FortResourceItemDefinition Athena_WadsItemData.Athena_WadsItemData"));
-    Inventory::GiveItem(PlayerController, UObject::FindObject<UFortAmmoItemDefinition>("FortAmmoItemDefinition AthenaAmmoDataBulletsHeavy.AthenaAmmoDataBulletsHeavy"));
+
+    Inventory::GiveItem(PlayerController, Utils::FindObjectFast<UFortWorldItemDefinition>("AthenaAmmoDataShells"));
+    Inventory::GiveItem(PlayerController, Utils::FindObjectFast<UFortWorldItemDefinition>("AthenaAmmoDataBulletsLight"));
+    Inventory::GiveItem(PlayerController, Utils::FindObjectFast<UFortWorldItemDefinition>("AthenaAmmoDataBulletsMedium"));
+    Inventory::GiveItem(PlayerController, Utils::FindObjectFast<UFortWorldItemDefinition>("AthenaAmmoDataBulletsHeavy"));
+    Inventory::GiveItem(PlayerController, Utils::FindObjectFast<UFortWorldItemDefinition>("AmmoDataRockets"));
+
+    Inventory::GiveItem(PlayerController, Utils::FindObjectFast<UFortWorldItemDefinition>("WID_SMG_Paprika_Burst_Athena_SR"));
+    Inventory::GiveItem(PlayerController, Utils::FindObjectFast<UFortWorldItemDefinition>("WID_Shotgun_Auto_Paprika_Athena_UR_Boss"));
+    Inventory::GiveItem(PlayerController, Utils::FindObjectFast<UFortWorldItemDefinition>("WID_Sniper_Paprika_Athena_SR"));
+    Inventory::GiveItem(PlayerController, Utils::FindObjectFast<UFortWorldItemDefinition>("Athena_ShockGrenade"));
+    Inventory::GiveItem(PlayerController, Utils::FindObjectFast<UFortWorldItemDefinition>("WID_Paprika_TeamSpray_LowGrav"));
+
     for (int i = 0; i < 4; i++)
     {
         auto thing = GameMode->StartingItems[i];

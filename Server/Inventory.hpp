@@ -1,6 +1,62 @@
 namespace Inventory
 {
-    void GiveItem(AFortPlayerControllerAthena* PlayerController, UFortWorldItemDefinition* ItemDef, int32 Count = -1, UFortWeaponModSetData* ModSetData = nullptr)
+    FFortItemEntry* FindItemEntry(AFortPlayerControllerAthena* PlayerController, const FGuid& ItemGuid)
+    {
+        for (int i = 0; i < PlayerController->WorldInventory->Inventory.ReplicatedEntries.Num(); i++)
+        {
+            auto& Entry = PlayerController->WorldInventory->Inventory.ReplicatedEntries[i];
+            if (UKismetGuidLibrary::EqualEqual_GuidGuid(Entry.ItemGuid, ItemGuid))
+            {
+                return &Entry;
+            }
+        }
+
+        return nullptr;
+    }
+
+    UFortWorldItem* FindItemInstance(AFortPlayerControllerAthena* PlayerController, const FGuid& ItemGuid)
+    {
+        for (int i = 0; i < PlayerController->WorldInventory->Inventory.ReplicatedEntries.Num(); i++)
+        {
+            auto& Entry = PlayerController->WorldInventory->Inventory.ReplicatedEntries[i];
+            if (UKismetGuidLibrary::EqualEqual_GuidGuid(Entry.ItemGuid, ItemGuid))
+            {
+                return PlayerController->WorldInventory->Inventory.ItemInstances[i];
+            }
+        }
+
+        return nullptr;
+    }
+
+    void AddModToItemEntry(FFortItemEntry& ItemEntry, UFortWeaponModItemDefinition* WeaponMod)
+    {
+        for (auto& Slot : ItemEntry.WeaponModSlots)
+        {
+            if (UBlueprintGameplayTagLibrary::EqualEqual_GameplayTag(WeaponMod->ModSlot, Slot.WeaponMod->ModSlot))
+            {
+                Slot.WeaponMod = WeaponMod;
+                return;
+            }
+        }
+
+        ItemEntry.WeaponModSlots.Add({ WeaponMod, true });
+    }
+
+    void AddModToWeapon(AFortWeapon* Weapon, UFortWeaponModItemDefinition* WeaponMod)
+    {
+        for (auto& Slot : Weapon->WeaponModSlots)
+        {
+            if (UBlueprintGameplayTagLibrary::EqualEqual_GameplayTag(WeaponMod->ModSlot, Slot.WeaponMod->ModSlot))
+            {
+                Slot.WeaponMod = WeaponMod;
+                return;
+            }
+        }
+
+        Weapon->WeaponModSlots.Add({ WeaponMod, true });
+    }
+
+    void GiveItem(AFortPlayerControllerAthena* PlayerController, UFortWorldItemDefinition* ItemDef, int32 Count = -1)
     {
         if (!ItemDef)
             return;
@@ -12,6 +68,13 @@ namespace Inventory
         }
 
         auto Item = (UFortWorldItem*)ItemDef->CreateTemporaryItemInstanceBP(Count, 1);
+
+        if (ItemDef->IsA(UFortWeaponItemDefinition::StaticClass()))
+        {
+            auto WeaponDef = (UFortWeaponItemDefinition*)ItemDef;
+            for (auto Mod : WeaponDef->WeaponModSlots)
+                Item->ItemEntry.WeaponModSlots.Add({ Mod.WeaponMod, Mod.bIsDynamic });
+        }
 
         // if (ModSetData)
         // {
@@ -72,10 +135,13 @@ namespace Inventory
         }
     }
 
-    void Update(AFortPlayerControllerAthena* PlayerController)
+    void Update(AFortPlayerControllerAthena* PlayerController, FFortItemEntry* ItemEntryToUpdate = nullptr)
     {
         PlayerController->WorldInventory->HandleInventoryLocalUpdate();
-        Utils::MarkArrayDirty(&PlayerController->WorldInventory->Inventory);
+        if (ItemEntryToUpdate)
+            Utils::MarkItemDirty(&PlayerController->WorldInventory->Inventory, &ItemEntryToUpdate);
+        else
+            Utils::MarkArrayDirty(&PlayerController->WorldInventory->Inventory);
     }
     
     void ServerExecuteInventoryItemHook(AFortPlayerControllerAthena* PlayerController, const FGuid& ItemGuid)
@@ -88,6 +154,9 @@ namespace Inventory
             if (UKismetGuidLibrary::EqualEqual_GuidGuid(Entry.ItemGuid, ItemGuid))
             {
                 auto Weapon = Pawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Entry.ItemDefinition, ItemGuid, {}, false);
+                if (Weapon->WeaponModSlots.Num() != Entry.WeaponModSlots.Num())
+                    Weapon->WeaponModSlots = Entry.WeaponModSlots;
+
                 break;
             }
         }

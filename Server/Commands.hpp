@@ -54,22 +54,22 @@ namespace Commands
     
             EventState++;
         }
-        else if (Cmd == L"snipermod")
-        {
-            static UFortWorldItemDefinition* Snipers[] = {
-                UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_UC.WID_Sniper_Paprika_Athena_UC"),
-                UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_R.WID_Sniper_Paprika_Athena_R"),
-                UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_VR.WID_Sniper_Paprika_Athena_VR"),
-                UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_SR.WID_Sniper_Paprika_Athena_SR")
-            };
-            static auto ModSetData = UObject::FindObject<UFortWeaponModSetData>("FortWeaponModSetData WMSet_CovertOps.WMSet_CovertOps");
+        // else if (Cmd == L"snipermod")
+        // {
+        //     static UFortWorldItemDefinition* Snipers[] = {
+        //         UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_UC.WID_Sniper_Paprika_Athena_UC"),
+        //         UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_R.WID_Sniper_Paprika_Athena_R"),
+        //         UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_VR.WID_Sniper_Paprika_Athena_VR"),
+        //         UObject::FindObject<UFortWorldItemDefinition>("FortWeaponRangedItemDefinition WID_Sniper_Paprika_Athena_SR.WID_Sniper_Paprika_Athena_SR")
+        //     };
+        //     static auto ModSetData = UObject::FindObject<UFortWeaponModSetData>("FortWeaponModSetData WMSet_CovertOps.WMSet_CovertOps");
     
-            for (int i = 0; i < 4; i++)
-            {
-                Inventory::GiveItem(PlayerController, Snipers[i], 1, ModSetData);
-            }
-            Inventory::Update(PlayerController);
-        }
+        //     for (int i = 0; i < 4; i++)
+        //     {
+        //         Inventory::GiveItem(PlayerController, Snipers[i], 1, ModSetData);
+        //     }
+        //     Inventory::Update(PlayerController);
+        // }
         else if (Cmd == L"car")
         {
             auto Loc = PlayerController->Pawn->K2_GetActorLocation();

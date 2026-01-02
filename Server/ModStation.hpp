@@ -7,24 +7,12 @@ namespace ModStation
         if (!Component->CanPlayerAffordModForWeapon(WeaponMod, Weapon, PlayerController))
             return;
     
-        bool added = false;
-        for (auto& Slot : Weapon->WeaponModSlots)
-        {
-            if (UBlueprintGameplayTagLibrary::EqualEqual_GameplayTag(WeaponMod->ModSlot, Slot.WeaponMod->ModSlot))
-            {
-                Slot.WeaponMod = WeaponMod;
-                added = true;
-            }
-        }
-    
-        if (!added)
-        {
-            Weapon->WeaponModSlots.Add({ WeaponMod, true });
-        }
-    
+        Inventory::AddModToWeapon(Weapon, WeaponMod);
+        // TODO Fix mods disappearing in quickbar when switching
+
         // TODO Add player name to weapon name
     
-        static auto GoldItemDef = UObject::FindObject<UFortResourceItemDefinition>("FortResourceItemDefinition Athena_WadsItemData.Athena_WadsItemData");
+        static auto GoldItemDef = Utils::GetSoftPtr(Utils::GetAssetManager()->GameDataBR->DefaultGlobalCurrencyItemDefinition);
     
         // TODO Get real mod cost
         Inventory::RemoveItem(PlayerController, GoldItemDef, 75);
