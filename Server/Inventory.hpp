@@ -167,6 +167,28 @@ namespace Inventory
         }
     }
 
+    void RemoveItem(AFortPlayerControllerAthena* PlayerController, const FGuid& ItemGuid, int32 Count = -1)
+    {
+        for (int i = 0; i < PlayerController->WorldInventory->Inventory.ReplicatedEntries.Num(); i++)
+        {
+            auto Entry = PlayerController->WorldInventory->Inventory.ReplicatedEntries[i];
+            if (UKismetGuidLibrary::EqualEqual_GuidGuid(Entry.ItemGuid, ItemGuid))
+            {
+                RemoveItem(PlayerController, i, Count);
+                break;
+            }
+        }
+    }
+
+    bool RemoveInventoryItem(int64 a1, const FGuid& ItemGuid, int32 Count, bool bForceRemoval, bool bForcePersistWhenEmpty)
+    {
+        auto PlayerController = (AFortPlayerControllerAthena*)(a1 - 0x760);
+
+        RemoveItem(PlayerController, ItemGuid, Count);
+        
+        return true;
+    }
+
     void ServerExecuteInventoryItemHook(AFortPlayerControllerAthena* PlayerController, const FGuid& ItemGuid)
     {
         auto Pawn = (AFortPlayerPawnAthena*)PlayerController->Pawn;

@@ -96,7 +96,8 @@ namespace Utils
         {
             ret = SoftPtr.Get();
         }
-        else
+
+        if (!ret)
         {
             ret = (T*)UKismetSystemLibrary::LoadAsset_Blocking((TSoftObjectPtr<UObject>)SoftPtr);
         }
@@ -112,7 +113,8 @@ namespace Utils
         {
             ret = SoftPtr.Get();
         }
-        else
+
+        if (!ret)
         {
             ret = UKismetSystemLibrary::LoadClassAsset_Blocking((TSoftClassPtr<UClass>)SoftPtr);
         }

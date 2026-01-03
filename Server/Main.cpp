@@ -218,6 +218,8 @@ DWORD MainThread(HMODULE Module)
     Hook::Function(InSDKUtils::GetImageBase() + 0x63AD804, Net::KickPlayerHook);
     Hook::Function(InSDKUtils::GetImageBase() + 0x19C6B78, Net::TickFlushHook, &Net::TickFlushOriginal);
 
+    Hook::Function(InSDKUtils::GetImageBase() + 0x967392C, Inventory::RemoveInventoryItem);
+
     Hook::VTable<AFortGameModeBR>(2328 / 8, ReadyToStartMatchHook, &ReadyToStartMatchOriginal);
     Hook::VTable<AFortGameModeBR>(1832 / 8, SpawnDefaultPawnForHook);
 
